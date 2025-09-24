@@ -42,17 +42,22 @@ router.get("/api/gpt/chat", async (ctx, next) => {
   ctx.set("Content-Type", "text/event-stream"); // 'text/event-stream' 标识 SSE 即 Server-Sent Events
 
   for await (const chunk of gptStream) {
-    console.log(
-      "chunk.choices[0].delta.content....",
-      chunk.choices[0].delta.content,
-      "choices...",
-      choices
-    );
-    ctx.res.write(`data: ${JSON.stringify(chunk)}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
-    if (chunk.choices[0].delta.content == null) {
-      console.log("chunk.choices[0].delta.content is null");
-      ctx.res.end(`data: [DONE]`);
-      break;
+    const { choices = [], usage } = chunk;
+    console.log("usage...", usage);
+
+    // chunk content
+    let content = "";
+
+    if (choices.length > 0) {
+      content = choices[0].delta.content;
+    }
+
+    if (content) {
+      const data = { c: content };
+      ctx.res.write(`data: ${JSON.stringify(data)}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
+    } else if (usage != null) {
+      console.log("content is null");
+      ctx.res.write(`data: [DONE]\n\n`);
     }
   }
 
