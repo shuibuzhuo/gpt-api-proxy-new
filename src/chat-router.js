@@ -43,7 +43,6 @@ router.get("/api/gpt/chat", async (ctx, next) => {
 
   for await (const chunk of gptStream) {
     const { choices = [], usage } = chunk;
-    console.log("usage...", usage);
 
     // chunk content
     let content = "";
