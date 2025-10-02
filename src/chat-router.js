@@ -53,6 +53,9 @@ router.get("/api/gpt/chat", async (ctx, next) => {
     gptStream = await openai.chat.completions.create({
       model: "deepseek-chat",
       stream: true, // stream
+      stream_options: {
+        include_usage: true,
+      },
       ...option,
     });
   } catch (error) {
@@ -70,22 +73,16 @@ router.get("/api/gpt/chat", async (ctx, next) => {
   for await (const chunk of gptStream) {
     const { choices = [], usage } = chunk;
 
-    // chunk content
-    let content = "";
-
     if (choices.length > 0) {
-      content = choices[0].delta.content;
-    }
-
-    console.log("content...", content);
-
-    if (content) {
-      const data = { c: content };
-      ctx.res.write(`data: ${JSON.stringify(data)}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
-    } else if (usage != null) {
-      console.log("content is null");
-      ctx.gptStreamDone = true;
-      ctx.res.write(`data: [DONE]\n\n`);
+      const content = choices[0].delta.content;
+      if (content) {
+        const data = { c: content };
+        ctx.res.write(`data: ${JSON.stringify(data)}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
+      } else if (usage != null) {
+        console.log("content is null, usage...", usage); // 格式如 { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 }
+        ctx.gptStreamDone = true;
+        ctx.res.write(`data: [DONE]\n\n`);
+      }
     }
   }
 });
