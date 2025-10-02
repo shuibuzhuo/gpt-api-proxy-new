@@ -10,12 +10,30 @@ const openai = new OpenAI({
 });
 
 router.get("/api/gpt/chat", async (ctx, next) => {
+  ctx.status = 200;
+  ctx.set("Content-Type", "text/event-stream"); // 'text/event-stream' 标识 SSE 即 Server-Sent Events
+
+  let gptStream;
+
+  ctx.req.on("close", () => {
+    console.log("req close...");
+
+    // 取消请求
+    console.log("try abort...");
+    if (!ctx.gptStreamDone) {
+      console.log("abort request...");
+      gptStream.controller.abort();
+      console.log("abort ok...");
+    }
+  });
+
   const query = ctx.query || {};
 
   // 简单的密钥
   const authToken = query["x-auth-token"] || "";
   if (!authToken.trim() || authToken !== process.env.AUTH_TOKEN) {
-    ctx.body = "invalid token";
+    const errMsg = "invalid token";
+    ctx.res.write(`data: [ERROR]${errMsg}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
     return;
   }
 
@@ -25,21 +43,29 @@ router.get("/api/gpt/chat", async (ctx, next) => {
   const option = JSON.parse(decodeOptionStr);
 
   if (!option.messages) {
-    ctx.body = "invalid option: messages required";
+    const errMsg = "invalid option: messages required";
+    ctx.res.write(`data: [ERROR]${errMsg}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
     return;
   }
 
-  // request GPT API
-  const gptStream = await openai.chat.completions.create({
-    model: "deepseek-chat",
-    // messages: [{ role: 'user', content: 'xxx' }],
-    // max_tokens: 100,
-    stream: true, // stream
-    ...option,
-  });
+  try {
+    // request GPT API
+    gptStream = await openai.chat.completions.create({
+      model: "deepseek-chat",
+      stream: true, // stream
+      ...option,
+    });
+  } catch (error) {
+    const errMsg = error.message || "request openai API error";
+    ctx.res.write(`data: [ERROR]${errMsg}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
+    return;
+  }
 
-  ctx.status = 200;
-  ctx.set("Content-Type", "text/event-stream"); // 'text/event-stream' 标识 SSE 即 Server-Sent Events
+  if (gptStream == null) {
+    const errMsg = "gptStream is not defined";
+    ctx.res.write(`data: [ERROR]${errMsg}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
+    return;
+  }
 
   for await (const chunk of gptStream) {
     const { choices = [], usage } = chunk;
@@ -51,18 +77,17 @@ router.get("/api/gpt/chat", async (ctx, next) => {
       content = choices[0].delta.content;
     }
 
+    console.log("content...", content);
+
     if (content) {
       const data = { c: content };
       ctx.res.write(`data: ${JSON.stringify(data)}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
     } else if (usage != null) {
       console.log("content is null");
+      ctx.gptStreamDone = true;
       ctx.res.write(`data: [DONE]\n\n`);
     }
   }
-
-  ctx.req.on("close", () => {
-    console.log("req close...");
-  });
 });
 
 module.exports = router;
