@@ -26,3 +26,11 @@ git clone 项目
 
 - `x-auth-token` 值和 `.env` 中定义的要一致
 - `option` 是 `encodeURIComponent('{"messages": [ {  "role": "user", "content": "你好，你是谁" }  ]}')`
+
+## 发布上线
+
+PS：暂时用手动打包上传的方式，后面再改为自动化的 CI/CD 流程
+
+- 修改 `.env` 文件，符合线上环境
+- 在代码包的根目录下执行 `zip -rq -y code.zip ./` 命令进行打包
+- 上传到阿里云函数 https://fcnext.console.aliyun.com/cn-hongkong/functions

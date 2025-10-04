@@ -80,6 +80,7 @@ router.get("/api/gpt/chat", async (ctx, next) => {
         ctx.res.write(`data: ${JSON.stringify(data)}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
       } else if (usage != null) {
         console.log("content is null, usage...", usage); // 格式如 { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 }
+        ctx.res.write(`data: ${JSON.stringify({ usage })}\n\n`); // 格式必须是 `data: xxx\n\n` ！！！
         ctx.gptStreamDone = true;
         ctx.res.write(`data: [DONE]\n\n`);
       }
