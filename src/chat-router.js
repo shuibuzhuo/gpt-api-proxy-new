@@ -52,6 +52,7 @@ router.get("/api/gpt/chat", async (ctx, next) => {
     // request GPT API
     gptStream = await openai.chat.completions.create({
       model: "deepseek-chat",
+      max_tokens: 1000, // 默认
       stream: true, // stream
       stream_options: {
         include_usage: true,

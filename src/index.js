@@ -29,5 +29,5 @@ app.use(async (ctx) => {
   ctx.body = "chat API proxy";
 });
 
-const port = parseInt(process.env.PORT, 10) || 3002;
+const port = 3002;
 app.listen(port);
