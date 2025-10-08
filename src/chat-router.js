@@ -1,7 +1,5 @@
-const OpenAI = require("openai");
 const Router = require("koa-router");
 const { getOpenAIInstance } = require("../lib/openai");
-require("dotenv").config();
 
 const router = new Router();
 
@@ -46,12 +44,12 @@ router.get("/api/gpt/chat", async (ctx, next) => {
 
   try {
     // get open ai instance
-    const { openai, key } = getOpenAIInstance();
+    const { openai, key, model } = getOpenAIInstance();
     console.log("cur openai key...", `${key.slice(0, 15)}***`);
 
     // request GPT API
     gptStream = await openai.chat.completions.create({
-      model: "deepseek-chat",
+      model,
       max_tokens: 600, // 默认
       stream: true, // stream
       stream_options: {
