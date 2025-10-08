@@ -5,11 +5,6 @@ require("dotenv").config();
 
 const router = new Router();
 
-const openai = new OpenAI({
-  baseURL: "https://api.deepseek.com",
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 router.get("/api/gpt/chat", async (ctx, next) => {
   ctx.status = 200;
   ctx.set("Content-Type", "text/event-stream"); // 'text/event-stream' 标识 SSE 即 Server-Sent Events
